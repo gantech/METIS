@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 project(METIS C)
 
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(SHARED FALSE CACHE BOOL "build a shared library")
 
 if(MSVC)
