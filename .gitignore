@@ -60,3 +60,7 @@ graphs/*.npart.*
 GKlib
 .svn/
 
+# Agent/session artifacts
+.journal/
+sources/
+
