@@ -670,8 +670,10 @@ void MoveGroupMinConnForVol(ctrl_t *ctrl, graph_t *graph, idx_t to, idx_t nind,
 
     /*CheckKWayVolPartitionParams(ctrl, graph);*/
   }
-  ASSERT(ComputeCut(graph, where) == graph->mincut);
-  ASSERTP(ComputeVolume(graph, where) == graph->minvol, 
+  /* Note: a ComputeCut()==mincut check is not valid here: for objtype=vol the
+     edge weights are set to 1+vsize[u]+vsize[v], so ComputeCut() returns the
+     vsize-weighted cut while graph->mincut tracks the unweighted edge count. */
+  ASSERTP(ComputeVolume(graph, where) == graph->minvol,
       ("%"PRIDX" %"PRIDX"\n", ComputeVolume(graph, where), graph->minvol));
 
 }
