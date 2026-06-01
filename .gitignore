@@ -61,6 +61,6 @@ GKlib
 .svn/
 
 # Agent/session artifacts
-.journal/
-sources/
+.aijournal/
+.aisources/
 
