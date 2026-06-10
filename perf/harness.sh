@@ -27,6 +27,7 @@ CONFIGS=(
   "rb_mdual_50|gpmetis|graphs/mdual.graph|50|-ptype=rb"
   "rb_mdual_100|gpmetis|graphs/mdual.graph|100|-ptype=rb"
   "nd_mdual|ndmetis|graphs/mdual.graph||"
+  "nd_mdual_cc|ndmetis|graphs/mdual.graph||-ccorder"
 )
 
 run_one() { # tool graph nparts extra -> sets OUTFILE, writes stdout to TMPOUT
