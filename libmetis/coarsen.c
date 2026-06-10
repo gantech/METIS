@@ -356,8 +356,8 @@ idx_t Match_SHEM(ctrl_t *ctrl, graph_t *graph)
             /* single constraint version */
             for (j=xadj[i]; j<xadj[i+1]; j++) {
               k = adjncy[j];
-              if (match[k] == UNMATCHED && 
-                  maxwgt < adjwgt[j] && vwgt[i]+vwgt[k] <= maxvwgt[0]) {
+              if (maxwgt < adjwgt[j] && match[k] == UNMATCHED &&
+                  vwgt[i]+vwgt[k] <= maxvwgt[0]) {
                 maxidx = k;
                 maxwgt = adjwgt[j];
               }
