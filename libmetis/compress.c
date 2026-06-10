@@ -76,10 +76,16 @@ graph_t *CompressGraph(ctrl_t *ctrl, idx_t nvtxs, idx_t *xadj, idx_t *adjncy,
       }
 
       cptr[++cnvtxs] = l;
+
+      /* cnvtxs only grows, so once it reaches the rejection threshold the graph
+         is provably incompressible; stop the (verification-heavy) scan early.
+         Same predicate as the post-loop test, so the decision is unchanged. */
+      if (cnvtxs >= COMPRESSION_FRACTION*nvtxs)
+        break;
     }
   }
 
-  IFSET(ctrl->dbglvl, METIS_DBG_INFO, 
+  IFSET(ctrl->dbglvl, METIS_DBG_INFO,
         printf("  Compression: reduction in # of vertices: %"PRIDX".\n", nvtxs-cnvtxs)); 
 
 
