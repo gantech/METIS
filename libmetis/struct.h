@@ -204,6 +204,10 @@ typedef struct ctrl_t {
                              The size and current position of the pool is controlled
                              by nnbrs & cnbrs */
 
+  double *cnbrsqrt;     /*!< T2.7: precomputed sqrt(k) for k in [0,nparts], used by the
+                             k-way cut gain priority ed/sqrt(nnbrs). double so the value
+                             matches inline sqrt() before narrowing to real_t. */
+
   /* The subdomain graph, in sparse format  */ 
   idx_t *maxnads;               /* The maximum allocated number of adjacent domains */
   idx_t *nads;                  /* The number of adjacent domains */

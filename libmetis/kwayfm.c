@@ -185,7 +185,7 @@ void Greedy_KWayCutOptimize(ctrl_t *ctrl, graph_t *graph, idx_t niter,
     for (ii=0; ii<nbnd; ii++) {
       i = bndind[perm[ii]];
       rgain = (graph->ckrinfo[i].nnbrs > 0 ? 
-               1.0*graph->ckrinfo[i].ed/sqrt(graph->ckrinfo[i].nnbrs) : 0.0) 
+               1.0*graph->ckrinfo[i].ed/ctrl->cnbrsqrt[graph->ckrinfo[i].nnbrs] : 0.0)
                - graph->ckrinfo[i].id;
       rpqInsert(queue, i, rgain);
       vstatus[i] = VPQSTATUS_PRESENT;
@@ -845,7 +845,7 @@ void Greedy_McKWayCutOptimize(ctrl_t *ctrl, graph_t *graph, idx_t niter,
     for (ii=0; ii<nbnd; ii++) {
       i = bndind[perm[ii]];
       rgain = (graph->ckrinfo[i].nnbrs > 0 ? 
-               1.0*graph->ckrinfo[i].ed/sqrt(graph->ckrinfo[i].nnbrs) : 0.0) 
+               1.0*graph->ckrinfo[i].ed/ctrl->cnbrsqrt[graph->ckrinfo[i].nnbrs] : 0.0)
                - graph->ckrinfo[i].id;
       rpqInsert(queue, i, rgain);
       vstatus[i] = VPQSTATUS_PRESENT;

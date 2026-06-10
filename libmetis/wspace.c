@@ -62,6 +62,15 @@ void AllocateRefinementWorkSpace(ctrl_t *ctrl, idx_t nbrpoolsize_max, idx_t nbrp
   }
 
 
+  /* T2.7: precomputed sqrt table for the k-way cut gain priority (idx in [0,nparts]) */
+  {
+    idx_t i;
+    ctrl->cnbrsqrt = (double *)gk_malloc((ctrl->nparts+1)*sizeof(double),
+                          "AllocateRefinementWorkSpace: cnbrsqrt");
+    for (i=0; i<=ctrl->nparts; i++)
+      ctrl->cnbrsqrt[i] = sqrt((double)i);
+  }
+
   /* Allocate the memory for the sparse subdomain graph */
   if (ctrl->minconn) {
     ctrl->pvec1   = imalloc(ctrl->nparts+1, "AllocateRefinementWorkSpace: pvec1");
@@ -88,7 +97,7 @@ void FreeWorkSpace(ctrl_t *ctrl)
              ctrl->nbrpoolsize,  ctrl->nbrpoolcpos, 
              ctrl->nbrpoolreallocs));
 
-  gk_free((void **)&ctrl->cnbrpool, &ctrl->vnbrpool, LTERM);
+  gk_free((void **)&ctrl->cnbrpool, &ctrl->vnbrpool, &ctrl->cnbrsqrt, LTERM);
   ctrl->nbrpoolsize_max = 0;
   ctrl->nbrpoolsize     = 0;
   ctrl->nbrpoolcpos     = 0;
