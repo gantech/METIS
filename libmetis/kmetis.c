@@ -109,6 +109,9 @@ idx_t MlevelKWayPartitioning(ctrl_t *ctrl, graph_t *graph, idx_t *part)
   real_t curbal=0.0, bestbal=0.0;
   graph_t *cgraph;
   int status;
+  char *outfile;
+  idx_t nlevels=0;
+  idx_t **level_cmaps=NULL;
 
 
   for (i=0; i<ctrl->ncuts; i++) {
@@ -130,6 +133,13 @@ idx_t MlevelKWayPartitioning(ctrl_t *ctrl, graph_t *graph, idx_t *part)
     IFSET(ctrl->dbglvl, METIS_DBG_TIME, gk_stopcputimer(ctrl->InitPartTmr));
     IFSET(ctrl->dbglvl, METIS_DBG_IPART, 
         printf("Initial %"PRIDX"-way partitioning cut: %"PRIDX"\n", ctrl->nparts, objval));
+
+    /* Snapshot cmap arrays now, before RefineKWay frees coarser graphs
+     * during uncoarsening. These are copies so the free inside
+     * ProjectKWayPartition is harmless. */
+    outfile = getenv("METIS_MULTILEVEL_OUT");
+    if (outfile != NULL)
+      nlevels = capture_multilevel_cmaps(graph, &level_cmaps);
 
     RefineKWay(ctrl, graph, cgraph);
 
@@ -154,7 +164,15 @@ idx_t MlevelKWayPartitioning(ctrl_t *ctrl, graph_t *graph, idx_t *part)
       icopy(graph->nvtxs, graph->where, part);
       bestobj = curobj;
       bestbal = curbal;
+
+      /* Emit output for the best trial found so far. graph->where == part
+       * at this point, so we have the correct final L0 partition. */
+      if (outfile != NULL)
+        dump_multilevel_hierarchy(graph->nvtxs, nlevels, level_cmaps, part, outfile);
     }
+
+    free_multilevel_cmaps(nlevels, &level_cmaps);
+    nlevels = 0;
 
     FreeRData(graph);
 
@@ -559,4 +577,107 @@ void BalanceAndRefineLP(ctrl_t *ctrl, graph_t *graph, idx_t nparts, idx_t *where
   }
 
   WCOREPOP;
+}
+
+
+/*************************************************************************/
+/*! Snapshot cmap arrays from every level of the coarse-graph chain.
+ *  level_cmaps[0] maps L0->L1 (size = nvtxs of finest graph),
+ *  level_cmaps[1] maps L1->L2, etc.
+ *  Returns the number of levels captured. */
+/*************************************************************************/
+idx_t capture_multilevel_cmaps(graph_t *finest_graph, idx_t ***r_level_cmaps)
+{
+  idx_t i, nlevels;
+  graph_t *ptr;
+  idx_t **level_cmaps;
+
+  nlevels = 0;
+  for (ptr = finest_graph; ptr != NULL && ptr->coarser != NULL; ptr = ptr->coarser)
+    nlevels++;
+
+  if (nlevels == 0) {
+    *r_level_cmaps = NULL;
+    return 0;
+  }
+
+  level_cmaps = (idx_t **)gk_malloc(nlevels*sizeof(idx_t *), "capture_multilevel_cmaps");
+
+  ptr = finest_graph;
+  for (i = 0; i < nlevels; i++) {
+    level_cmaps[i] = imalloc(ptr->nvtxs, "capture_multilevel_cmaps: cmap");
+    icopy(ptr->nvtxs, ptr->cmap, level_cmaps[i]);
+    ptr = ptr->coarser;
+  }
+
+  *r_level_cmaps = level_cmaps;
+  return nlevels;
+}
+
+
+/*************************************************************************/
+/*! Free the cmap arrays captured by capture_multilevel_cmaps. */
+/*************************************************************************/
+void free_multilevel_cmaps(idx_t nlevels, idx_t ***r_level_cmaps)
+{
+  idx_t i;
+  idx_t **level_cmaps = *r_level_cmaps;
+
+  if (level_cmaps == NULL)
+    return;
+
+  for (i = 0; i < nlevels; i++)
+    gk_free((void **)&level_cmaps[i], LTERM);
+
+  gk_free((void **)r_level_cmaps, LTERM);
+}
+
+
+/*************************************************************************/
+/*! For every finest-level node i (0-based), trace its ancestry through
+ *  the snapshotted cmap arrays and write one CSV row:
+ *
+ *    PartitionID, Lk_vertexID, L(k-1)_vertexID, ..., L1_vertexID, L0_vertexID
+ *
+ *  All vertex IDs are 1-based to match the METIS graph-file convention.
+ *  PartitionID is the final selected partition for node i. */
+/*************************************************************************/
+void dump_multilevel_hierarchy(idx_t nvtxs, idx_t nlevels, idx_t **level_cmaps,
+         idx_t *part, char *outfile)
+{
+  FILE *fpout;
+  idx_t i, j;
+  idx_t *lineage;   /* lineage[j] = 1-based vertex ID at level j+1 */
+
+  fpout = gk_fopen(outfile, "w", "dump_multilevel_hierarchy");
+  if (fpout == NULL)
+    return;
+
+  lineage = (nlevels > 0)
+              ? imalloc(nlevels, "dump_multilevel_hierarchy: lineage")
+              : NULL;
+
+  /* Header */
+  fprintf(fpout, "PartitionID");
+  for (i = nlevels; i >= 1; i--)
+    fprintf(fpout, ",L%"PRIDX, i);
+  fprintf(fpout, ",L0\n");
+
+  for (i = 0; i < nvtxs; i++) {
+    idx_t v = i;   /* current vertex index, 0-based */
+
+    /* Walk up: level_cmaps[j] maps a vertex at level j to its parent at level j+1 */
+    for (j = 0; j < nlevels; j++) {
+      v = level_cmaps[j][v];
+      lineage[j] = v + 1;   /* 1-based: lineage[0]=L1 id, lineage[1]=L2 id, ... */
+    }
+
+    fprintf(fpout, "%"PRIDX, part[i]);
+    for (j = nlevels - 1; j >= 0; j--)   /* emit Lk..L1 */
+      fprintf(fpout, ",%"PRIDX, lineage[j]);
+    fprintf(fpout, ",%"PRIDX"\n", i + 1);  /* L0: fine node ID */
+  }
+
+  gk_free((void **)&lineage, LTERM);
+  gk_fclose(fpout);
 }

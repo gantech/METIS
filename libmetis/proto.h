@@ -177,6 +177,12 @@ void ComputeKWayBoundary(ctrl_t *ctrl, graph_t *graph, idx_t bndtype);
 void ComputeKWayVolGains(ctrl_t *ctrl, graph_t *graph);
 int IsBalanced(ctrl_t *ctrl, graph_t *graph, real_t ffactor);
 
+/* multilevel output (kmetis.c) */
+idx_t capture_multilevel_cmaps(graph_t *finest_graph, idx_t ***r_level_cmaps);
+void free_multilevel_cmaps(idx_t nlevels, idx_t ***r_level_cmaps);
+void dump_multilevel_hierarchy(idx_t nvtxs, idx_t nlevels, idx_t **level_cmaps,
+         idx_t *part, char *outfile);
+
 
 /* mcutil.c */
 int rvecle(idx_t n, real_t *x, real_t *y);
