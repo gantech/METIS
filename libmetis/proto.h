@@ -140,7 +140,7 @@ void GrowBisectionNode2(ctrl_t *ctrl, graph_t *graph, real_t *ntpwgts, idx_t nip
 
 
 /* kmetis.c */
-idx_t MlevelKWayPartitioning(ctrl_t *ctrl, graph_t *graph, idx_t *part);
+idx_t MlevelKWayPartitioning(ctrl_t *ctrl, graph_t *graph, idx_t *part, char *outfile);
 void InitKWayPartitioning(ctrl_t *ctrl, graph_t *graph);
 idx_t BlockKWayPartitioning(ctrl_t *ctrl, graph_t *graph, idx_t *part);
 idx_t GrowMultisection(ctrl_t *ctrl, graph_t *graph, idx_t nparts, idx_t *where);
@@ -182,6 +182,11 @@ idx_t capture_multilevel_cmaps(graph_t *finest_graph, idx_t ***r_level_cmaps);
 void free_multilevel_cmaps(idx_t nlevels, idx_t ***r_level_cmaps);
 void dump_multilevel_hierarchy(idx_t nvtxs, idx_t nlevels, idx_t **level_cmaps,
          idx_t *part, char *outfile);
+idx_t MlevelKWayPartitioning(ctrl_t *ctrl, graph_t *graph, idx_t *part, char *outfile);
+int METIS_PartGraphKwayWithOutput(idx_t *nvtxs, idx_t *ncon, idx_t *xadj,
+          idx_t *adjncy, idx_t *vwgt, idx_t *vsize, idx_t *adjwgt, idx_t *nparts,
+          real_t *tpwgts, real_t *ubvec, idx_t *options, idx_t *objval,
+          idx_t *part, char *outfile);
 
 
 /* mcutil.c */

@@ -192,6 +192,11 @@ METIS_API(int) METIS_PartGraphKway(idx_t *nvtxs, idx_t *ncon, idx_t *xadj,
                   idx_t *nparts, real_t *tpwgts, real_t *ubvec, idx_t *options, 
                   idx_t *edgecut, idx_t *part);
 
+METIS_API(int) METIS_PartGraphKwayWithOutput(idx_t *nvtxs, idx_t *ncon, idx_t *xadj,
+                  idx_t *adjncy, idx_t *vwgt, idx_t *vsize, idx_t *adjwgt,
+                  idx_t *nparts, real_t *tpwgts, real_t *ubvec, idx_t *options,
+                  idx_t *edgecut, idx_t *part, char *outfile);
+
 METIS_API(int) METIS_MeshToDual(idx_t *ne, idx_t *nn, idx_t *eptr, idx_t *eind, 
                   idx_t *ncommon, idx_t *numflag, idx_t **r_xadj, idx_t **r_adjncy);
 
@@ -281,6 +286,7 @@ typedef enum {
   METIS_OPTION_UFACTOR,
   METIS_OPTION_NUMBERING,
   METIS_OPTION_DROPEDGES,
+  METIS_OPTION_MULTILEVEL_OUT,
   METIS_OPTION_NO2HOP,
   METIS_OPTION_TWOHOP,
   METIS_OPTION_FAST,

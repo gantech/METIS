@@ -34,8 +34,8 @@ endif(SHARED)
 include(./conf/gkbuild.cmake)
 
 # METIS' custom options
-#option(IDX64 "enable 64 bit ints" OFF)
-#option(REAL64 "enable 64 bit floats (i.e., double)" OFF)
+option(IDX64 "enable 64 bit ints" OFF)
+option(REAL64 "enable 64 bit floats (i.e., double)" OFF)
 #if(IDX64)
 #  set(METIS_COPTIONS "${METIS_COPTIONS} -DIDXTYPEWIDTH=64")
 #else()

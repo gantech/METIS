@@ -159,6 +159,7 @@ typedef struct ctrl_t {
   idx_t ondisk;                 /* Indicates out-of-core execution */
   idx_t minconn;                /* Indicates if the subdomain connectivity will be minimized */
   idx_t contig;                 /* Indicates if contiguous partitions are required */
+  idx_t multilevel_out;         /* Indicates if multilevel lineage should be written */
   idx_t nseps;			/* The number of separators to be found during multiple bisections */
   idx_t ufactor;                /* The user-supplied load imbalance factor */
   idx_t compress;               /* If the graph will be compressed prior to ordering */

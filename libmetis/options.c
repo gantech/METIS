@@ -57,6 +57,7 @@ ctrl_t *SetupCtrl(moptype_et optype, idx_t *options, idx_t ncon, idx_t nparts,
       ctrl->ufactor = GETOPTION(options, METIS_OPTION_UFACTOR, KMETIS_DEFAULT_UFACTOR);
       ctrl->minconn = GETOPTION(options, METIS_OPTION_MINCONN, 0);
       ctrl->contig  = GETOPTION(options, METIS_OPTION_CONTIG,  0);
+      ctrl->multilevel_out = GETOPTION(options, METIS_OPTION_MULTILEVEL_OUT, 0);
       break;
 
 

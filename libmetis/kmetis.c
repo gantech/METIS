@@ -20,6 +20,20 @@ int METIS_PartGraphKway(idx_t *nvtxs, idx_t *ncon, idx_t *xadj, idx_t *adjncy,
           real_t *tpwgts, real_t *ubvec, idx_t *options, idx_t *objval, 
           idx_t *part)
 {
+  return METIS_PartGraphKwayWithOutput(nvtxs, ncon, xadj, adjncy, vwgt, vsize,
+      adjwgt, nparts, tpwgts, ubvec, options, objval, part, NULL);
+}
+
+
+/*************************************************************************/
+/*! This function is the entry point for MCKMETIS and writes multilevel
+    output to outfile when provided. */
+/*************************************************************************/
+int METIS_PartGraphKwayWithOutput(idx_t *nvtxs, idx_t *ncon, idx_t *xadj, idx_t *adjncy,
+          idx_t *vwgt, idx_t *vsize, idx_t *adjwgt, idx_t *nparts,
+          real_t *tpwgts, real_t *ubvec, idx_t *options, idx_t *objval,
+          idx_t *part, char *outfile)
+{
   int sigrval=0, renumber=0;
   graph_t *graph;
   ctrl_t *ctrl;
@@ -71,7 +85,7 @@ int METIS_PartGraphKway(idx_t *nvtxs, idx_t *ncon, idx_t *xadj, idx_t *adjncy,
   if (ctrl->dbglvl&512)
     *objval = (*nparts == 1 ? 0 : BlockKWayPartitioning(ctrl, graph, part));
   else
-    *objval = (*nparts == 1 ? 0 : MlevelKWayPartitioning(ctrl, graph, part));
+    *objval = (*nparts == 1 ? 0 : MlevelKWayPartitioning(ctrl, graph, part, outfile));
 
   IFSET(ctrl->dbglvl, METIS_DBG_TIME, gk_stopcputimer(ctrl->TotalTmr));
   IFSET(ctrl->dbglvl, METIS_DBG_TIME, PrintTimers(ctrl));
@@ -103,13 +117,12 @@ SIGTHROW:
              itself is stored in the part vector.
 */
 /*************************************************************************/
-idx_t MlevelKWayPartitioning(ctrl_t *ctrl, graph_t *graph, idx_t *part)
+idx_t MlevelKWayPartitioning(ctrl_t *ctrl, graph_t *graph, idx_t *part, char *outfile)
 {
   idx_t i, j, objval=0, curobj=0, bestobj=0;
   real_t curbal=0.0, bestbal=0.0;
   graph_t *cgraph;
   int status;
-  char *outfile;
   idx_t nlevels=0;
   idx_t **level_cmaps=NULL;
 
@@ -134,11 +147,10 @@ idx_t MlevelKWayPartitioning(ctrl_t *ctrl, graph_t *graph, idx_t *part)
     IFSET(ctrl->dbglvl, METIS_DBG_IPART, 
         printf("Initial %"PRIDX"-way partitioning cut: %"PRIDX"\n", ctrl->nparts, objval));
 
-    /* Snapshot cmap arrays now, before RefineKWay frees coarser graphs
-     * during uncoarsening. These are copies so the free inside
-     * ProjectKWayPartition is harmless. */
-    outfile = getenv("METIS_MULTILEVEL_OUT");
-    if (outfile != NULL)
+    /* Snapshot the full cmap chain before RefineKWay begins uncoarsening.
+     * The copied parent maps are the exact lineage used later by
+     * dump_multilevel_hierarchy() for the winning trial only. */
+    if (outfile != NULL || ctrl->multilevel_out)
       nlevels = capture_multilevel_cmaps(graph, &level_cmaps);
 
     RefineKWay(ctrl, graph, cgraph);
@@ -165,8 +177,9 @@ idx_t MlevelKWayPartitioning(ctrl_t *ctrl, graph_t *graph, idx_t *part)
       bestobj = curobj;
       bestbal = curbal;
 
-      /* Emit output for the best trial found so far. graph->where == part
-       * at this point, so we have the correct final L0 partition. */
+      /* Emit output for the best trial found so far.
+       * graph->where == part here, so the CSV is attached to the final
+       * selected L0 partition and the snapshotted cmap chain from that run. */
       if (outfile != NULL)
         dump_multilevel_hierarchy(graph->nvtxs, nlevels, level_cmaps, part, outfile);
     }
@@ -635,12 +648,13 @@ void free_multilevel_cmaps(idx_t nlevels, idx_t ***r_level_cmaps)
 
 /*************************************************************************/
 /*! For every finest-level node i (0-based), trace its ancestry through
- *  the snapshotted cmap arrays and write one CSV row:
+ *  the snapshotted cmap arrays from the winning trial and write one CSV row:
  *
  *    PartitionID, Lk_vertexID, L(k-1)_vertexID, ..., L1_vertexID, L0_vertexID
  *
  *  All vertex IDs are 1-based to match the METIS graph-file convention.
- *  PartitionID is the final selected partition for node i. */
+ *  PartitionID is the final selected partition for node i, and each Lj
+ *  is the parent vertex ID at coarser level j. */
 /*************************************************************************/
 void dump_multilevel_hierarchy(idx_t nvtxs, idx_t nlevels, idx_t **level_cmaps,
          idx_t *part, char *outfile)
